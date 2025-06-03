@@ -152,7 +152,7 @@ class _AddPrayerListScreenState extends State<AddPrayerListScreen> {
               spacing: 12,
               children: [
                 _buildIconOption('list', Icons.list),
-                _buildIconOption('church', Icons.church),
+                _buildIconOption('church', Icons.groups),
                 _buildIconOption('family', Icons.family_restroom),
                 _buildIconOption('work', Icons.work),
                 _buildIconOption('health', Icons.health_and_safety),

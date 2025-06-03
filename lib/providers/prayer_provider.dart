@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:prayer_sync/database/app_database.dart';
+import 'package:prayer_sync/database/database_repository.dart';
 import 'package:prayer_sync/models/prayer_request.dart' as models;
 import 'package:prayer_sync/models/prayer_list.dart' as models;
+import 'package:prayer_sync/services/sync_service.dart';
 import 'package:uuid/uuid.dart';
 
 class PrayerProvider extends ChangeNotifier {
@@ -17,6 +19,7 @@ class PrayerProvider extends ChangeNotifier {
 
   void setDatabase(AppDatabase db) {
     _database = db;
+    SyncService.instance.initialize(db);
     loadData();
   }
 
@@ -51,6 +54,9 @@ class PrayerProvider extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Trigger sync after local change
+      SyncService.instance.syncAfterLocalChange();
     } catch (e) {
       throw Exception('Failed to add prayer request: $e');
     }
@@ -107,6 +113,10 @@ class PrayerProvider extends ChangeNotifier {
       }
       
       notifyListeners();
+      
+      // Trigger sync after local change
+      debugPrint('🔄 PrayerProvider: Triggering sync after prayer count increment for request: $requestId');
+      SyncService.instance.syncAfterLocalChange();
     } catch (e) {
       throw Exception('Failed to increment prayer count: $e');
     }
@@ -147,6 +157,9 @@ class PrayerProvider extends ChangeNotifier {
       await _database.insertPrayerList(newList);
       _lists.add(newList);
       notifyListeners();
+      
+      // Trigger sync after local change
+      SyncService.instance.syncAfterLocalChange();
     } catch (e) {
       throw Exception('Failed to add prayer list: $e');
     }

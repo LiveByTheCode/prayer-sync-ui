@@ -6,8 +6,15 @@ import 'package:prayer_sync/providers/auth_provider.dart';
 import 'package:prayer_sync/screens/home_screen.dart';
 import 'package:prayer_sync/screens/login_screen.dart';
 import 'package:prayer_sync/utils/theme.dart';
+import 'package:prayer_sync/config/environment.dart';
 
 void main() {
+  // Print environment info during development
+  if (EnvironmentConfig.isDevelopment) {
+    debugPrint('Running in DEVELOPMENT mode');
+    debugPrint('API URL: ${EnvironmentConfig.apiBaseUrl}');
+  }
+  
   runApp(const PrayerSyncApp());
 }
 

@@ -39,7 +39,7 @@ class PrayerRequestCard extends StatelessWidget {
               },
               backgroundColor: Colors.blue,
               foregroundColor: Colors.white,
-              icon: Icons.self_improvement,
+              icon: Icons.volunteer_activism,
               label: 'Pray',
             ),
             if (!request.isAnswered)
@@ -166,7 +166,7 @@ class PrayerRequestCard extends StatelessWidget {
                         _buildChip(
                           context,
                           'Prayed ${request.prayerCount}x',
-                          Icons.self_improvement,
+                          Icons.volunteer_activism,
                           Colors.purple,
                         ),
                     ],
@@ -316,7 +316,7 @@ class PrayerRequestCard extends StatelessWidget {
       case RequestCategory.work:
         return Icons.work;
       case RequestCategory.spiritualGrowth:
-        return Icons.church;
+        return Icons.groups;
       case RequestCategory.relationships:
         return Icons.people;
       case RequestCategory.finances:

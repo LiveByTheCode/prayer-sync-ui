@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:prayer_sync/providers/auth_provider.dart';
+import 'package:prayer_sync/services/token_storage_service.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,14 +14,16 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _nameController = TextEditingController();
+  final _firstNameController = TextEditingController();
+  final _lastNameController = TextEditingController();
   bool _isSignUp = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _nameController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
     super.dispose();
   }
 
@@ -30,10 +33,12 @@ class _LoginScreenState extends State<LoginScreen> {
       
       try {
         if (_isSignUp) {
+          // Combine first and last name for display name
+          final displayName = '${_firstNameController.text} ${_lastNameController.text}'.trim();
           await authProvider.signUp(
             _emailController.text,
             _passwordController.text,
-            _nameController.text,
+            displayName,
           );
         } else {
           await authProvider.signInWithEmail(
@@ -41,19 +46,29 @@ class _LoginScreenState extends State<LoginScreen> {
             _passwordController.text,
           );
         }
+        
+        // Debug: Verify token was saved
+        debugPrint('🔐 Login successful, checking token storage...');
+        final token = await TokenStorageService.instance.getToken();
+        final userId = await TokenStorageService.instance.getUserId();
+        debugPrint('🔑 Token stored: ${token != null ? "Yes (length: ${token.length})" : "No"}');
+        debugPrint('👤 User ID stored: ${userId ?? "None"}');
       } catch (e) {
         if (mounted) {
           String errorMessage = 'An error occurred';
+          final errorString = e.toString();
           
-          if (e.toString().contains('Failed to sign in')) {
-            errorMessage = 'Invalid email or password';
-          } else if (e.toString().contains('Failed to sign up')) {
-            errorMessage = 'Unable to create account. Email may already be in use.';
-          } else if (e.toString().contains('Connection error') || 
-                     e.toString().contains('Network error')) {
+          // Extract the actual error message
+          if (errorString.contains('Exception: ')) {
+            // Remove the "Exception: Failed to sign up: " prefix to get actual message
+            errorMessage = errorString.replaceAll(RegExp(r'Exception: Failed to (sign in|sign up): '), '');
+          } else if (errorString.contains('Connection error') || 
+                     errorString.contains('Network error')) {
             errorMessage = 'No internet connection. Please check your network.';
-          } else if (e.toString().contains('timeout')) {
+          } else if (errorString.contains('timeout')) {
             errorMessage = 'Connection timed out. Please try again.';
+          } else {
+            errorMessage = errorString;
           }
           
           ScaffoldMessenger.of(context).showSnackBar(
@@ -80,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Icon(
-                  Icons.church,
+                  Icons.favorite,
                   size: 80,
                   color: Theme.of(context).colorScheme.primary,
                 ),
@@ -104,21 +119,32 @@ class _LoginScreenState extends State<LoginScreen> {
                   key: _formKey,
                   child: Column(
                     children: [
-                      if (_isSignUp)
+                      if (_isSignUp) ...[
                         TextFormField(
-                          controller: _nameController,
+                          controller: _firstNameController,
                           decoration: const InputDecoration(
-                            labelText: 'Display Name',
+                            labelText: 'First Name',
                             prefixIcon: Icon(Icons.person),
                           ),
+                          textCapitalization: TextCapitalization.words,
                           validator: (value) {
                             if (value == null || value.isEmpty) {
-                              return 'Please enter your name';
+                              return 'Please enter your first name';
                             }
                             return null;
                           },
                         ),
-                      if (_isSignUp) const SizedBox(height: 16),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _lastNameController,
+                          decoration: const InputDecoration(
+                            labelText: 'Last Name (optional)',
+                            prefixIcon: Icon(Icons.person_outline),
+                          ),
+                          textCapitalization: TextCapitalization.words,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
                       TextFormField(
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,

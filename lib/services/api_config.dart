@@ -1,50 +1,20 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:prayer_sync/config/environment.dart';
 
 class ApiConfig {
-  // iOS Simulator uses localhost
-  static const String _iosSimulatorUrl = 'http://localhost:8080/api';
-  
-  // Android Emulator uses 10.0.2.2 to access host machine's localhost
-  static const String _androidEmulatorUrl = 'http://10.0.2.2:8080/api';
-  
-  // For physical devices, use your machine's IP address
-  static const String _physicalDeviceUrl = 'http://YOUR_MACHINE_IP:8080/api';
-  
-  // Production URL
-  static const String _productionBaseUrl = 'https://your-production-url.com/api';
-  
-  /// Get the appropriate base URL based on platform and environment
-  static String get baseUrl {
-    if (kIsWeb) {
-      // Web app can use localhost
-      return 'http://localhost:8080/api';
-    }
-    
-    // For mobile platforms
-    if (Platform.isAndroid) {
-      // Use 10.0.2.2 for Android emulator, or machine IP for physical device
-      return _androidEmulatorUrl;
-    } else if (Platform.isIOS) {
-      // iOS simulator can use localhost
-      return _iosSimulatorUrl;
-    }
-    
-    // Default fallback
-    return _iosSimulatorUrl;
-  }
+  /// Get the base URL from environment configuration
+  static String get baseUrl => EnvironmentConfig.apiBaseUrl;
   
   /// Connection timeout duration
-  static const Duration connectTimeout = Duration(seconds: 10);
+  static Duration get connectTimeout => EnvironmentConfig.apiTimeout;
   
   /// Receive timeout duration
-  static const Duration receiveTimeout = Duration(seconds: 10);
+  static Duration get receiveTimeout => EnvironmentConfig.apiTimeout;
   
   /// Send timeout duration
-  static const Duration sendTimeout = Duration(seconds: 10);
+  static Duration get sendTimeout => EnvironmentConfig.apiTimeout;
   
   /// Whether to enable request/response logging
-  static const bool enableLogging = true;
+  static bool get enableLogging => EnvironmentConfig.enableLogging;
   
   /// Headers to include with every request
   static const Map<String, String> defaultHeaders = {

@@ -22,6 +22,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signInWithEmail(String email, String password) async {
     setLoading(true);
     try {
+      debugPrint('🔐 AuthProvider: Signing in user: $email');
       final authResponse = await ApiService.instance.signIn(
         email: email,
         password: password,
@@ -29,6 +30,14 @@ class AuthProvider extends ChangeNotifier {
       
       _currentUser = authResponse.user;
       _isAuthenticated = true;
+      debugPrint('✅ AuthProvider: Sign in successful for ${_currentUser?.email}');
+      
+      // Verify token was saved
+      final savedToken = await TokenStorageService.instance.getToken();
+      final savedUserId = await TokenStorageService.instance.getUserId();
+      debugPrint('🔑 AuthProvider: Token saved: ${savedToken != null ? "Yes (length: ${savedToken.length})" : "No"}');
+      debugPrint('👤 AuthProvider: User ID saved: ${savedUserId ?? "None"}');
+      
       notifyListeners();
     } on ApiException catch (e) {
       throw Exception('Failed to sign in: ${e.message}');
@@ -42,6 +51,7 @@ class AuthProvider extends ChangeNotifier {
   Future<void> signUp(String email, String password, String displayName) async {
     setLoading(true);
     try {
+      debugPrint('🔐 AuthProvider: Signing up user: $email');
       final authResponse = await ApiService.instance.signUp(
         email: email,
         password: password,
@@ -50,6 +60,14 @@ class AuthProvider extends ChangeNotifier {
       
       _currentUser = authResponse.user;
       _isAuthenticated = true;
+      debugPrint('✅ AuthProvider: Sign up successful for ${_currentUser?.email}');
+      
+      // Verify token was saved
+      final savedToken = await TokenStorageService.instance.getToken();
+      final savedUserId = await TokenStorageService.instance.getUserId();
+      debugPrint('🔑 AuthProvider: Token saved: ${savedToken != null ? "Yes (length: ${savedToken.length})" : "No"}');
+      debugPrint('👤 AuthProvider: User ID saved: ${savedUserId ?? "None"}');
+      
       notifyListeners();
     } on ApiException catch (e) {
       throw Exception('Failed to sign up: ${e.message}');
@@ -74,6 +92,7 @@ class AuthProvider extends ChangeNotifier {
   }
 
   void continueAsGuest() {
+    debugPrint('👻 AuthProvider: User continuing as guest');
     _currentUser = User(
       id: 'guest_user',
       email: 'guest@prayersync.local',
@@ -81,6 +100,8 @@ class AuthProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
     _isAuthenticated = true;
+    // Guest users don't have tokens
+    debugPrint('👻 AuthProvider: Guest user created, no token saved');
     notifyListeners();
   }
 
@@ -90,32 +111,47 @@ class AuthProvider extends ChangeNotifier {
     
     setLoading(true);
     try {
+      debugPrint('🔐 AuthProvider: Checking for existing authentication...');
       final hasToken = await TokenStorageService.instance.hasToken();
+      final token = await TokenStorageService.instance.getToken();
+      final userId = await TokenStorageService.instance.getUserId();
+      
+      debugPrint('🔑 AuthProvider init - Has token: $hasToken');
+      debugPrint('🔑 AuthProvider init - Token: ${token != null ? "Present (length: ${token.length})" : "None"}');
+      debugPrint('👤 AuthProvider init - User ID: ${userId ?? "None"}');
+      
       if (hasToken) {
         // Validate the existing token
+        debugPrint('🔄 AuthProvider: Validating existing token...');
         final isValid = await ApiService.instance.validateToken();
         if (isValid) {
           // Get current user profile
           try {
+            debugPrint('✅ AuthProvider: Token valid, fetching user profile...');
             _currentUser = await ApiService.instance.getCurrentUser();
             _isAuthenticated = true;
+            debugPrint('✅ AuthProvider: User authenticated as ${_currentUser?.email}');
           } catch (e) {
             // If profile fetch fails, clear the token
             await TokenStorageService.instance.clearToken();
-            debugPrint('Failed to get user profile: $e');
+            debugPrint('❌ AuthProvider: Failed to get user profile: $e');
           }
         } else {
           // Token is invalid, clear it
+          debugPrint('❌ AuthProvider: Token invalid, clearing...');
           await TokenStorageService.instance.clearToken();
         }
+      } else {
+        debugPrint('ℹ️ AuthProvider: No existing token found');
       }
     } catch (e) {
       // If any error occurs during initialization, continue as unauthenticated
-      debugPrint('Auth initialization error: $e');
+      debugPrint('❌ AuthProvider initialization error: $e');
       await TokenStorageService.instance.clearToken();
     } finally {
       _isInitialized = true;
       setLoading(false);
+      debugPrint('✅ AuthProvider: Initialization complete. Authenticated: $_isAuthenticated');
     }
   }
 

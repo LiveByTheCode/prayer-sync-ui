@@ -40,12 +40,14 @@ class LoginRequest {
 class SignupRequest {
   final String email;
   final String password;
-  final String displayName;
+  final String firstName;
+  final String lastName;
 
   SignupRequest({
     required this.email,
     required this.password,
-    required this.displayName,
+    required this.firstName,
+    required this.lastName,
   });
 
   factory SignupRequest.fromJson(Map<String, dynamic> json) => _$SignupRequestFromJson(json);

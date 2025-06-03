@@ -6,6 +6,7 @@ import 'package:prayer_sync/screens/prayer_lists_screen.dart';
 import 'package:prayer_sync/screens/all_requests_screen.dart';
 import 'package:prayer_sync/screens/profile_screen.dart';
 import 'package:prayer_sync/widgets/prayer_request_card.dart';
+import 'package:prayer_sync/widgets/sync_debug_widget.dart';
 import 'package:prayer_sync/models/prayer_request.dart';
 import 'package:badges/badges.dart' as badges;
 
@@ -59,7 +60,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 activeRequests.length.toString(),
                 style: const TextStyle(color: Colors.white, fontSize: 10),
               ),
-              child: const Icon(Icons.self_improvement),
+              child: const Icon(Icons.volunteer_activism),
             ),
             label: 'Requests',
           ),
@@ -94,6 +95,8 @@ class DashboardView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Debug sync controls (remove in production)
+            const SyncDebugWidget(),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
@@ -156,7 +159,7 @@ class DashboardView extends StatelessWidget {
                   child: Column(
                     children: [
                       Icon(
-                        Icons.self_improvement,
+                        Icons.volunteer_activism,
                         size: 64,
                         color: Colors.grey[400],
                       ),

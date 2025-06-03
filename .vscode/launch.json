@@ -1,0 +1,39 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Prayer Sync (Dev)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=ENVIRONMENT=dev"
+      ]
+    },
+    {
+      "name": "Prayer Sync (Prod)",
+      "request": "launch",
+      "type": "dart",
+      "args": [
+        "--dart-define=ENVIRONMENT=prod"
+      ]
+    },
+    {
+      "name": "Prayer Sync (Dev - Profile)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "profile",
+      "args": [
+        "--dart-define=ENVIRONMENT=dev"
+      ]
+    },
+    {
+      "name": "Prayer Sync (Dev - Release)",
+      "request": "launch",
+      "type": "dart",
+      "flutterMode": "release",
+      "args": [
+        "--dart-define=ENVIRONMENT=dev"
+      ]
+    }
+  ]
+}

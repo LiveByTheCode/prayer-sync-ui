@@ -1031,7 +1031,7 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
 }
 
 class $PrayerListsTable extends PrayerLists
-    with TableInfo<$PrayerListsTable, models.PrayerList> {
+    with TableInfo<$PrayerListsTable, PrayerList> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1144,7 +1144,7 @@ class $PrayerListsTable extends PrayerLists
   String get actualTableName => $name;
   static const String $name = 'prayer_lists';
   @override
-  VerificationContext validateIntegrity(Insertable<models.PrayerList> instance,
+  VerificationContext validateIntegrity(Insertable<PrayerList> instance,
       {bool isInserting = false}) {
     final context = VerificationContext();
     final data = instance.toColumns(true);
@@ -1227,7 +1227,7 @@ class $PrayerListsTable extends PrayerLists
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  models.PrayerList map(Map<String, dynamic> data, {String? tablePrefix}) {
+  PrayerList map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
     return PrayerList(
       id: attachedDatabase.typeMapping
@@ -1267,7 +1267,7 @@ class $PrayerListsTable extends PrayerLists
   }
 }
 
-class PrayerList extends DataClass implements Insertable<models.PrayerList> {
+class PrayerList extends DataClass implements Insertable<PrayerList> {
   final String id;
   final String? churchId;
   final String name;
@@ -1512,7 +1512,7 @@ class PrayerList extends DataClass implements Insertable<models.PrayerList> {
           other.icon == this.icon);
 }
 
-class PrayerListsCompanion extends UpdateCompanion<models.PrayerList> {
+class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
   final Value<String> id;
   final Value<String?> churchId;
   final Value<String> name;
@@ -1566,7 +1566,7 @@ class PrayerListsCompanion extends UpdateCompanion<models.PrayerList> {
         ownerId = Value(ownerId),
         ownerName = Value(ownerName),
         createdAt = Value(createdAt);
-  static Insertable<models.PrayerList> custom({
+  static Insertable<PrayerList> custom({
     Expression<String>? id,
     Expression<String>? churchId,
     Expression<String>? name,
@@ -3512,17 +3512,14 @@ class $$PrayerListsTableAnnotationComposer
 class $$PrayerListsTableTableManager extends RootTableManager<
     _$AppDatabase,
     $PrayerListsTable,
-    models.PrayerList,
+    PrayerList,
     $$PrayerListsTableFilterComposer,
     $$PrayerListsTableOrderingComposer,
     $$PrayerListsTableAnnotationComposer,
     $$PrayerListsTableCreateCompanionBuilder,
     $$PrayerListsTableUpdateCompanionBuilder,
-    (
-      models.PrayerList,
-      BaseReferences<_$AppDatabase, $PrayerListsTable, models.PrayerList>
-    ),
-    models.PrayerList,
+    (PrayerList, BaseReferences<_$AppDatabase, $PrayerListsTable, PrayerList>),
+    PrayerList,
     PrefetchHooks Function()> {
   $$PrayerListsTableTableManager(_$AppDatabase db, $PrayerListsTable table)
       : super(TableManagerState(
@@ -3612,17 +3609,14 @@ class $$PrayerListsTableTableManager extends RootTableManager<
 typedef $$PrayerListsTableProcessedTableManager = ProcessedTableManager<
     _$AppDatabase,
     $PrayerListsTable,
-    models.PrayerList,
+    PrayerList,
     $$PrayerListsTableFilterComposer,
     $$PrayerListsTableOrderingComposer,
     $$PrayerListsTableAnnotationComposer,
     $$PrayerListsTableCreateCompanionBuilder,
     $$PrayerListsTableUpdateCompanionBuilder,
-    (
-      models.PrayerList,
-      BaseReferences<_$AppDatabase, $PrayerListsTable, models.PrayerList>
-    ),
-    models.PrayerList,
+    (PrayerList, BaseReferences<_$AppDatabase, $PrayerListsTable, PrayerList>),
+    PrayerList,
     PrefetchHooks Function()>;
 typedef $$ChurchesTableCreateCompanionBuilder = ChurchesCompanion Function({
   required String id,

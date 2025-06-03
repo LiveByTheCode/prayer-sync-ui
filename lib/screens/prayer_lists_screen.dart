@@ -265,7 +265,7 @@ class _PrayerListCard extends StatelessWidget {
       case 'list':
         return Icons.list;
       case 'church':
-        return Icons.church;
+        return Icons.groups;
       case 'family':
         return Icons.family_restroom;
       case 'work':

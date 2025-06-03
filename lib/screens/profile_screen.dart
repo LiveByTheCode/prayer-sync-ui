@@ -60,7 +60,7 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               children: [
                 ListTile(
-                  leading: const Icon(Icons.church),
+                  leading: const Icon(Icons.groups),
                   title: const Text('My Churches'),
                   subtitle: Text('${user?.churchIds.length ?? 0} churches'),
                   trailing: const Icon(Icons.chevron_right),
@@ -123,7 +123,7 @@ class ProfileScreen extends StatelessWidget {
                       applicationName: 'Prayer Sync',
                       applicationVersion: '1.0.0',
                       applicationIcon: const Icon(
-                        Icons.church,
+                        Icons.people,
                         size: 48,
                       ),
                       children: const [

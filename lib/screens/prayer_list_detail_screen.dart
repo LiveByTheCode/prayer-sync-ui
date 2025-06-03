@@ -147,7 +147,7 @@ class PrayerListDetailScreen extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.self_improvement,
+              Icons.volunteer_activism,
               size: 64,
               color: Colors.grey[400],
             ),

@@ -2,17 +2,29 @@ import 'package:json_annotation/json_annotation.dart';
 
 part 'user.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(createToJson: true)
 class User {
+  @JsonKey(fromJson: _idFromJson)
   final String id;
   final String email;
   final String displayName;
+  @JsonKey(name: 'profileImageUrl')
   final String? photoUrl;
+  @JsonKey(name: 'churchId', fromJson: _churchIdsFromJson)
   final List<String> churchIds;
   final DateTime createdAt;
+  @JsonKey(name: 'updatedAt')
   final DateTime? lastLogin;
   final Map<String, dynamic>? preferences;
   final String? syncId;
+  
+  // Custom JSON converters
+  static String _idFromJson(dynamic id) => id.toString();
+  
+  static List<String> _churchIdsFromJson(dynamic churchId) {
+    if (churchId == null) return [];
+    return [churchId.toString()];
+  }
 
   User({
     required this.id,
@@ -26,7 +38,24 @@ class User {
     this.syncId,
   });
 
-  factory User.fromJson(Map<String, dynamic> json) => _$UserFromJson(json);
+  factory User.fromJson(Map<String, dynamic> json) {
+    // Create a mutable copy of the json map
+    final Map<String, dynamic> processedJson = Map<String, dynamic>.from(json);
+    
+    // Handle backend response format
+    if (!processedJson.containsKey('displayName')) {
+      final firstName = processedJson['firstName'] ?? '';
+      final lastName = processedJson['lastName'] ?? '';
+      processedJson['displayName'] = '$firstName $lastName'.trim();
+    }
+    
+    // Ensure required fields have defaults
+    if (!processedJson.containsKey('preferences')) {
+      processedJson['preferences'] = {};
+    }
+    
+    return _$UserFromJson(processedJson);
+  }
 
   Map<String, dynamic> toJson() => _$UserToJson(this);
 

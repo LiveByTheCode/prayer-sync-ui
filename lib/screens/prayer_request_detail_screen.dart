@@ -172,7 +172,7 @@ class PrayerRequestDetailScreen extends StatelessWidget {
                 ],
                 const Divider(height: 1),
                 ListTile(
-                  leading: const Icon(Icons.self_improvement),
+                  leading: const Icon(Icons.volunteer_activism),
                   title: const Text('Prayer Count'),
                   subtitle: Text('${request.prayerCount} times'),
                   trailing: ElevatedButton.icon(
@@ -431,7 +431,7 @@ class PrayerRequestDetailScreen extends StatelessWidget {
       case RequestCategory.work:
         return Icons.work;
       case RequestCategory.spiritualGrowth:
-        return Icons.church;
+        return Icons.groups;
       case RequestCategory.relationships:
         return Icons.people;
       case RequestCategory.finances:
