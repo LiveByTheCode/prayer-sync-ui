@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(flutter pub run build_runner build:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(grep:*)",
+      "Bash(rm:*)",
+      "Bash(flutter doctor:*)",
+      "Bash(flutter run:*)",
+      "Bash(flutter:*)",
+      "Bash(cat:*)",
+      "Bash(mv:*)",
+      "Bash(true)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(tree:*)",
+      "Bash(dart run:*)",
+      "Bash(./mvnw:*)"
+    ],
+    "deny": []
+  }
+}
