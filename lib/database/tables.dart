@@ -23,6 +23,9 @@ class PrayerRequests extends Table {
   TextColumn get reminderSettings => text().nullable()();
   DateTimeColumn get lastModified => dateTime().nullable()();
   TextColumn get syncId => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  DateTimeColumn get serverUpdatedAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};
@@ -40,6 +43,9 @@ class PrayerLists extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get lastModified => dateTime().nullable()();
   TextColumn get syncId => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  DateTimeColumn get serverUpdatedAt => dateTime().nullable()();
   IntColumn get requestCount => integer().withDefault(const Constant(0))();
   TextColumn get color => text().nullable()();
   TextColumn get icon => text().nullable()();
@@ -61,6 +67,9 @@ class Churches extends Table {
   DateTimeColumn get createdAt => dateTime()();
   DateTimeColumn get lastModified => dateTime().nullable()();
   TextColumn get syncId => text().nullable()();
+  BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get deletedAt => dateTime().nullable()();
+  DateTimeColumn get serverUpdatedAt => dateTime().nullable()();
   TextColumn get logoUrl => text().nullable()();
   TextColumn get settings => text().nullable()();
 
@@ -78,6 +87,7 @@ class Users extends Table {
   DateTimeColumn get lastLogin => dateTime().nullable()();
   TextColumn get preferences => text().nullable()();
   TextColumn get syncId => text().nullable()();
+  DateTimeColumn get lastSyncAt => dateTime().nullable()();
 
   @override
   Set<Column> get primaryKey => {id};

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:prayer_sync/models/user.dart';
 import 'package:prayer_sync/services/api_service.dart';
 import 'package:prayer_sync/services/token_storage_service.dart';
+import 'package:prayer_sync/services/sync_service.dart';
 
 class AuthProvider extends ChangeNotifier {
   User? _currentUser;
@@ -39,6 +40,8 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('👤 AuthProvider: User ID saved: ${savedUserId ?? "None"}');
       
       notifyListeners();
+      
+      // Note: Sync will be triggered by PrayerProvider after database initialization
     } on ApiException catch (e) {
       throw Exception('Failed to sign in: ${e.message}');
     } catch (e) {
@@ -69,6 +72,8 @@ class AuthProvider extends ChangeNotifier {
       debugPrint('👤 AuthProvider: User ID saved: ${savedUserId ?? "None"}');
       
       notifyListeners();
+      
+      // Note: Sync will be triggered by PrayerProvider after database initialization
     } on ApiException catch (e) {
       throw Exception('Failed to sign up: ${e.message}');
     } catch (e) {
@@ -131,6 +136,8 @@ class AuthProvider extends ChangeNotifier {
             _currentUser = await ApiService.instance.getCurrentUser();
             _isAuthenticated = true;
             debugPrint('✅ AuthProvider: User authenticated as ${_currentUser?.email}');
+            
+            // Note: Sync will be triggered by PrayerProvider after database initialization
           } catch (e) {
             // If profile fetch fails, clear the token
             await TokenStorageService.instance.clearToken();

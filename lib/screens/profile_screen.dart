@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:prayer_sync/providers/auth_provider.dart';
+import 'package:prayer_sync/database/app_database.dart';
+import 'package:prayer_sync/config/environment.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -140,6 +142,84 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
+          // Debug section (only in development)
+          if (EnvironmentConfig.isDevelopment) ...[
+            Card(
+              color: Colors.orange.shade50,
+              child: Column(
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.bug_report, color: Colors.orange),
+                    title: const Text(
+                      'Debug Tools',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text('Development only'),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.delete_forever, color: Colors.red),
+                    title: const Text(
+                      'Reset Local Database',
+                      style: TextStyle(color: Colors.red),
+                    ),
+                    subtitle: const Text('Clear all local data and restart fresh'),
+                    onTap: () async {
+                      final confirm = await showDialog<bool>(
+                        context: context,
+                        builder: (context) => AlertDialog(
+                          title: const Text('Reset Database'),
+                          content: const Text(
+                            'This will permanently delete all local data including prayer requests, lists, and offline changes. This action cannot be undone.\n\nAre you sure you want to continue?',
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, false),
+                              child: const Text('Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.pop(context, true),
+                              style: TextButton.styleFrom(
+                                foregroundColor: Colors.red,
+                              ),
+                              child: const Text('Reset Database'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                      if (confirm == true && context.mounted) {
+                        try {
+                          // Close current database connection
+                          final database = context.read<AppDatabase>();
+                          await database.close();
+                          
+                          // Delete the database file
+                          await AppDatabase.resetDatabase();
+                          
+                          // Show success message
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Database reset successfully. Please restart the app.'),
+                              backgroundColor: Colors.green,
+                            ),
+                          );
+                        } catch (e) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Error resetting database: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           if (user?.id != 'guest_user')
             Card(
               child: ListTile(

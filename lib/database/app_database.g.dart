@@ -149,6 +149,28 @@ class $PrayerRequestsTable extends PrayerRequests
   late final GeneratedColumn<String> syncId = GeneratedColumn<String>(
       'sync_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isDeletedMeta =
+      const VerificationMeta('isDeleted');
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+      'is_deleted', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_deleted" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _serverUpdatedAtMeta =
+      const VerificationMeta('serverUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> serverUpdatedAt =
+      GeneratedColumn<DateTime>('server_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -172,7 +194,10 @@ class $PrayerRequestsTable extends PrayerRequests
         prayerCount,
         reminderSettings,
         lastModified,
-        syncId
+        syncId,
+        isDeleted,
+        deletedAt,
+        serverUpdatedAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -309,6 +334,20 @@ class $PrayerRequestsTable extends PrayerRequests
       context.handle(_syncIdMeta,
           syncId.isAcceptableOrUnknown(data['sync_id']!, _syncIdMeta));
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(_isDeletedMeta,
+          isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+          _serverUpdatedAtMeta,
+          serverUpdatedAt.isAcceptableOrUnknown(
+              data['server_updated_at']!, _serverUpdatedAtMeta));
+    }
     return context;
   }
 
@@ -362,6 +401,12 @@ class $PrayerRequestsTable extends PrayerRequests
           .read(DriftSqlType.dateTime, data['${effectivePrefix}last_modified']),
       syncId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sync_id']),
+      isDeleted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_deleted'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}server_updated_at']),
     );
   }
 
@@ -394,6 +439,9 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
   final String? reminderSettings;
   final DateTime? lastModified;
   final String? syncId;
+  final bool isDeleted;
+  final DateTime? deletedAt;
+  final DateTime? serverUpdatedAt;
   const PrayerRequest(
       {required this.id,
       this.listId,
@@ -416,7 +464,10 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
       required this.prayerCount,
       this.reminderSettings,
       this.lastModified,
-      this.syncId});
+      this.syncId,
+      required this.isDeleted,
+      this.deletedAt,
+      this.serverUpdatedAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -457,6 +508,13 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
     }
     if (!nullToAbsent || syncId != null) {
       map['sync_id'] = Variable<String>(syncId);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt);
     }
     return map;
   }
@@ -499,6 +557,13 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
           : Value(lastModified),
       syncId:
           syncId == null && nullToAbsent ? const Value.absent() : Value(syncId),
+      isDeleted: Value(isDeleted),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
     );
   }
 
@@ -529,6 +594,9 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
       reminderSettings: serializer.fromJson<String?>(json['reminderSettings']),
       lastModified: serializer.fromJson<DateTime?>(json['lastModified']),
       syncId: serializer.fromJson<String?>(json['syncId']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverUpdatedAt: serializer.fromJson<DateTime?>(json['serverUpdatedAt']),
     );
   }
   @override
@@ -557,6 +625,9 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
       'reminderSettings': serializer.toJson<String?>(reminderSettings),
       'lastModified': serializer.toJson<DateTime?>(lastModified),
       'syncId': serializer.toJson<String?>(syncId),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverUpdatedAt': serializer.toJson<DateTime?>(serverUpdatedAt),
     };
   }
 
@@ -582,7 +653,10 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
           int? prayerCount,
           Value<String?> reminderSettings = const Value.absent(),
           Value<DateTime?> lastModified = const Value.absent(),
-          Value<String?> syncId = const Value.absent()}) =>
+          Value<String?> syncId = const Value.absent(),
+          bool? isDeleted,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<DateTime?> serverUpdatedAt = const Value.absent()}) =>
       PrayerRequest(
         id: id ?? this.id,
         listId: listId.present ? listId.value : this.listId,
@@ -612,6 +686,11 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
         lastModified:
             lastModified.present ? lastModified.value : this.lastModified,
         syncId: syncId.present ? syncId.value : this.syncId,
+        isDeleted: isDeleted ?? this.isDeleted,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        serverUpdatedAt: serverUpdatedAt.present
+            ? serverUpdatedAt.value
+            : this.serverUpdatedAt,
       );
   PrayerRequest copyWithCompanion(PrayerRequestsCompanion data) {
     return PrayerRequest(
@@ -655,6 +734,11 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
           ? data.lastModified.value
           : this.lastModified,
       syncId: data.syncId.present ? data.syncId.value : this.syncId,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
     );
   }
 
@@ -682,7 +766,10 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
           ..write('prayerCount: $prayerCount, ')
           ..write('reminderSettings: $reminderSettings, ')
           ..write('lastModified: $lastModified, ')
-          ..write('syncId: $syncId')
+          ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt')
           ..write(')'))
         .toString();
   }
@@ -710,7 +797,10 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
         prayerCount,
         reminderSettings,
         lastModified,
-        syncId
+        syncId,
+        isDeleted,
+        deletedAt,
+        serverUpdatedAt
       ]);
   @override
   bool operator ==(Object other) =>
@@ -737,7 +827,10 @@ class PrayerRequest extends DataClass implements Insertable<PrayerRequest> {
           other.prayerCount == this.prayerCount &&
           other.reminderSettings == this.reminderSettings &&
           other.lastModified == this.lastModified &&
-          other.syncId == this.syncId);
+          other.syncId == this.syncId &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAt == this.deletedAt &&
+          other.serverUpdatedAt == this.serverUpdatedAt);
 }
 
 class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
@@ -763,6 +856,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
   final Value<String?> reminderSettings;
   final Value<DateTime?> lastModified;
   final Value<String?> syncId;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAt;
+  final Value<DateTime?> serverUpdatedAt;
   final Value<int> rowid;
   const PrayerRequestsCompanion({
     this.id = const Value.absent(),
@@ -787,6 +883,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
     this.reminderSettings = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   PrayerRequestsCompanion.insert({
@@ -812,6 +911,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
     this.reminderSettings = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         dateAdded = Value(dateAdded),
@@ -844,6 +946,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
     Expression<String>? reminderSettings,
     Expression<DateTime>? lastModified,
     Expression<String>? syncId,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAt,
+    Expression<DateTime>? serverUpdatedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -869,6 +974,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
       if (reminderSettings != null) 'reminder_settings': reminderSettings,
       if (lastModified != null) 'last_modified': lastModified,
       if (syncId != null) 'sync_id': syncId,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -896,6 +1004,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
       Value<String?>? reminderSettings,
       Value<DateTime?>? lastModified,
       Value<String?>? syncId,
+      Value<bool>? isDeleted,
+      Value<DateTime?>? deletedAt,
+      Value<DateTime?>? serverUpdatedAt,
       Value<int>? rowid}) {
     return PrayerRequestsCompanion(
       id: id ?? this.id,
@@ -920,6 +1031,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
       reminderSettings: reminderSettings ?? this.reminderSettings,
       lastModified: lastModified ?? this.lastModified,
       syncId: syncId ?? this.syncId,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -993,6 +1107,15 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
     if (syncId.present) {
       map['sync_id'] = Variable<String>(syncId.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1024,6 +1147,9 @@ class PrayerRequestsCompanion extends UpdateCompanion<PrayerRequest> {
           ..write('reminderSettings: $reminderSettings, ')
           ..write('lastModified: $lastModified, ')
           ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1103,6 +1229,28 @@ class $PrayerListsTable extends PrayerLists
   late final GeneratedColumn<String> syncId = GeneratedColumn<String>(
       'sync_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isDeletedMeta =
+      const VerificationMeta('isDeleted');
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+      'is_deleted', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_deleted" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _serverUpdatedAtMeta =
+      const VerificationMeta('serverUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> serverUpdatedAt =
+      GeneratedColumn<DateTime>('server_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _requestCountMeta =
       const VerificationMeta('requestCount');
   @override
@@ -1134,6 +1282,9 @@ class $PrayerListsTable extends PrayerLists
         createdAt,
         lastModified,
         syncId,
+        isDeleted,
+        deletedAt,
+        serverUpdatedAt,
         requestCount,
         color,
         icon
@@ -1207,6 +1358,20 @@ class $PrayerListsTable extends PrayerLists
       context.handle(_syncIdMeta,
           syncId.isAcceptableOrUnknown(data['sync_id']!, _syncIdMeta));
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(_isDeletedMeta,
+          isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+          _serverUpdatedAtMeta,
+          serverUpdatedAt.isAcceptableOrUnknown(
+              data['server_updated_at']!, _serverUpdatedAtMeta));
+    }
     if (data.containsKey('request_count')) {
       context.handle(
           _requestCountMeta,
@@ -1252,6 +1417,12 @@ class $PrayerListsTable extends PrayerLists
           .read(DriftSqlType.dateTime, data['${effectivePrefix}last_modified']),
       syncId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sync_id']),
+      isDeleted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_deleted'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}server_updated_at']),
       requestCount: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}request_count'])!,
       color: attachedDatabase.typeMapping
@@ -1279,6 +1450,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
   final DateTime createdAt;
   final DateTime? lastModified;
   final String? syncId;
+  final bool isDeleted;
+  final DateTime? deletedAt;
+  final DateTime? serverUpdatedAt;
   final int requestCount;
   final String? color;
   final String? icon;
@@ -1294,6 +1468,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
       required this.createdAt,
       this.lastModified,
       this.syncId,
+      required this.isDeleted,
+      this.deletedAt,
+      this.serverUpdatedAt,
       required this.requestCount,
       this.color,
       this.icon});
@@ -1318,6 +1495,13 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
     }
     if (!nullToAbsent || syncId != null) {
       map['sync_id'] = Variable<String>(syncId);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt);
     }
     map['request_count'] = Variable<int>(requestCount);
     if (!nullToAbsent || color != null) {
@@ -1349,6 +1533,13 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
           : Value(lastModified),
       syncId:
           syncId == null && nullToAbsent ? const Value.absent() : Value(syncId),
+      isDeleted: Value(isDeleted),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
       requestCount: Value(requestCount),
       color:
           color == null && nullToAbsent ? const Value.absent() : Value(color),
@@ -1371,6 +1562,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastModified: serializer.fromJson<DateTime?>(json['lastModified']),
       syncId: serializer.fromJson<String?>(json['syncId']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverUpdatedAt: serializer.fromJson<DateTime?>(json['serverUpdatedAt']),
       requestCount: serializer.fromJson<int>(json['requestCount']),
       color: serializer.fromJson<String?>(json['color']),
       icon: serializer.fromJson<String?>(json['icon']),
@@ -1391,6 +1585,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastModified': serializer.toJson<DateTime?>(lastModified),
       'syncId': serializer.toJson<String?>(syncId),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverUpdatedAt': serializer.toJson<DateTime?>(serverUpdatedAt),
       'requestCount': serializer.toJson<int>(requestCount),
       'color': serializer.toJson<String?>(color),
       'icon': serializer.toJson<String?>(icon),
@@ -1409,6 +1606,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
           DateTime? createdAt,
           Value<DateTime?> lastModified = const Value.absent(),
           Value<String?> syncId = const Value.absent(),
+          bool? isDeleted,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<DateTime?> serverUpdatedAt = const Value.absent(),
           int? requestCount,
           Value<String?> color = const Value.absent(),
           Value<String?> icon = const Value.absent()}) =>
@@ -1425,6 +1625,11 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
         lastModified:
             lastModified.present ? lastModified.value : this.lastModified,
         syncId: syncId.present ? syncId.value : this.syncId,
+        isDeleted: isDeleted ?? this.isDeleted,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        serverUpdatedAt: serverUpdatedAt.present
+            ? serverUpdatedAt.value
+            : this.serverUpdatedAt,
         requestCount: requestCount ?? this.requestCount,
         color: color.present ? color.value : this.color,
         icon: icon.present ? icon.value : this.icon,
@@ -1447,6 +1652,11 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
           ? data.lastModified.value
           : this.lastModified,
       syncId: data.syncId.present ? data.syncId.value : this.syncId,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
       requestCount: data.requestCount.present
           ? data.requestCount.value
           : this.requestCount,
@@ -1469,6 +1679,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
           ..write('createdAt: $createdAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('requestCount: $requestCount, ')
           ..write('color: $color, ')
           ..write('icon: $icon')
@@ -1489,6 +1702,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
       createdAt,
       lastModified,
       syncId,
+      isDeleted,
+      deletedAt,
+      serverUpdatedAt,
       requestCount,
       color,
       icon);
@@ -1507,6 +1723,9 @@ class PrayerList extends DataClass implements Insertable<PrayerList> {
           other.createdAt == this.createdAt &&
           other.lastModified == this.lastModified &&
           other.syncId == this.syncId &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAt == this.deletedAt &&
+          other.serverUpdatedAt == this.serverUpdatedAt &&
           other.requestCount == this.requestCount &&
           other.color == this.color &&
           other.icon == this.icon);
@@ -1524,6 +1743,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastModified;
   final Value<String?> syncId;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAt;
+  final Value<DateTime?> serverUpdatedAt;
   final Value<int> requestCount;
   final Value<String?> color;
   final Value<String?> icon;
@@ -1540,6 +1762,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
     this.createdAt = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.requestCount = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
@@ -1557,6 +1782,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
     required DateTime createdAt,
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.requestCount = const Value.absent(),
     this.color = const Value.absent(),
     this.icon = const Value.absent(),
@@ -1578,6 +1806,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastModified,
     Expression<String>? syncId,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAt,
+    Expression<DateTime>? serverUpdatedAt,
     Expression<int>? requestCount,
     Expression<String>? color,
     Expression<String>? icon,
@@ -1595,6 +1826,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastModified != null) 'last_modified': lastModified,
       if (syncId != null) 'sync_id': syncId,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (requestCount != null) 'request_count': requestCount,
       if (color != null) 'color': color,
       if (icon != null) 'icon': icon,
@@ -1614,6 +1848,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
       Value<DateTime>? createdAt,
       Value<DateTime?>? lastModified,
       Value<String?>? syncId,
+      Value<bool>? isDeleted,
+      Value<DateTime?>? deletedAt,
+      Value<DateTime?>? serverUpdatedAt,
       Value<int>? requestCount,
       Value<String?>? color,
       Value<String?>? icon,
@@ -1630,6 +1867,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
       syncId: syncId ?? this.syncId,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       requestCount: requestCount ?? this.requestCount,
       color: color ?? this.color,
       icon: icon ?? this.icon,
@@ -1673,6 +1913,15 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
     if (syncId.present) {
       map['sync_id'] = Variable<String>(syncId.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt.value);
+    }
     if (requestCount.present) {
       map['request_count'] = Variable<int>(requestCount.value);
     }
@@ -1702,6 +1951,9 @@ class PrayerListsCompanion extends UpdateCompanion<PrayerList> {
           ..write('createdAt: $createdAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('requestCount: $requestCount, ')
           ..write('color: $color, ')
           ..write('icon: $icon, ')
@@ -1787,6 +2039,28 @@ class $ChurchesTable extends Churches with TableInfo<$ChurchesTable, Churche> {
   late final GeneratedColumn<String> syncId = GeneratedColumn<String>(
       'sync_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _isDeletedMeta =
+      const VerificationMeta('isDeleted');
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+      'is_deleted', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("is_deleted" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _serverUpdatedAtMeta =
+      const VerificationMeta('serverUpdatedAt');
+  @override
+  late final GeneratedColumn<DateTime> serverUpdatedAt =
+      GeneratedColumn<DateTime>('server_updated_at', aliasedName, true,
+          type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _logoUrlMeta =
       const VerificationMeta('logoUrl');
   @override
@@ -1813,6 +2087,9 @@ class $ChurchesTable extends Churches with TableInfo<$ChurchesTable, Churche> {
         createdAt,
         lastModified,
         syncId,
+        isDeleted,
+        deletedAt,
+        serverUpdatedAt,
         logoUrl,
         settings
       ];
@@ -1883,6 +2160,20 @@ class $ChurchesTable extends Churches with TableInfo<$ChurchesTable, Churche> {
       context.handle(_syncIdMeta,
           syncId.isAcceptableOrUnknown(data['sync_id']!, _syncIdMeta));
     }
+    if (data.containsKey('is_deleted')) {
+      context.handle(_isDeletedMeta,
+          isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    if (data.containsKey('server_updated_at')) {
+      context.handle(
+          _serverUpdatedAtMeta,
+          serverUpdatedAt.isAcceptableOrUnknown(
+              data['server_updated_at']!, _serverUpdatedAtMeta));
+    }
     if (data.containsKey('logo_url')) {
       context.handle(_logoUrlMeta,
           logoUrl.isAcceptableOrUnknown(data['logo_url']!, _logoUrlMeta));
@@ -1924,6 +2215,12 @@ class $ChurchesTable extends Churches with TableInfo<$ChurchesTable, Churche> {
           .read(DriftSqlType.dateTime, data['${effectivePrefix}last_modified']),
       syncId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sync_id']),
+      isDeleted: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}is_deleted'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      serverUpdatedAt: attachedDatabase.typeMapping.read(
+          DriftSqlType.dateTime, data['${effectivePrefix}server_updated_at']),
       logoUrl: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}logo_url']),
       settings: attachedDatabase.typeMapping
@@ -1950,6 +2247,9 @@ class Churche extends DataClass implements Insertable<Churche> {
   final DateTime createdAt;
   final DateTime? lastModified;
   final String? syncId;
+  final bool isDeleted;
+  final DateTime? deletedAt;
+  final DateTime? serverUpdatedAt;
   final String? logoUrl;
   final String? settings;
   const Churche(
@@ -1965,6 +2265,9 @@ class Churche extends DataClass implements Insertable<Churche> {
       required this.createdAt,
       this.lastModified,
       this.syncId,
+      required this.isDeleted,
+      this.deletedAt,
+      this.serverUpdatedAt,
       this.logoUrl,
       this.settings});
   @override
@@ -1995,6 +2298,13 @@ class Churche extends DataClass implements Insertable<Churche> {
     }
     if (!nullToAbsent || syncId != null) {
       map['sync_id'] = Variable<String>(syncId);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    if (!nullToAbsent || serverUpdatedAt != null) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt);
     }
     if (!nullToAbsent || logoUrl != null) {
       map['logo_url'] = Variable<String>(logoUrl);
@@ -2030,6 +2340,13 @@ class Churche extends DataClass implements Insertable<Churche> {
           : Value(lastModified),
       syncId:
           syncId == null && nullToAbsent ? const Value.absent() : Value(syncId),
+      isDeleted: Value(isDeleted),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+      serverUpdatedAt: serverUpdatedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAt),
       logoUrl: logoUrl == null && nullToAbsent
           ? const Value.absent()
           : Value(logoUrl),
@@ -2055,6 +2372,9 @@ class Churche extends DataClass implements Insertable<Churche> {
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       lastModified: serializer.fromJson<DateTime?>(json['lastModified']),
       syncId: serializer.fromJson<String?>(json['syncId']),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      serverUpdatedAt: serializer.fromJson<DateTime?>(json['serverUpdatedAt']),
       logoUrl: serializer.fromJson<String?>(json['logoUrl']),
       settings: serializer.fromJson<String?>(json['settings']),
     );
@@ -2075,6 +2395,9 @@ class Churche extends DataClass implements Insertable<Churche> {
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'lastModified': serializer.toJson<DateTime?>(lastModified),
       'syncId': serializer.toJson<String?>(syncId),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'serverUpdatedAt': serializer.toJson<DateTime?>(serverUpdatedAt),
       'logoUrl': serializer.toJson<String?>(logoUrl),
       'settings': serializer.toJson<String?>(settings),
     };
@@ -2093,6 +2416,9 @@ class Churche extends DataClass implements Insertable<Churche> {
           DateTime? createdAt,
           Value<DateTime?> lastModified = const Value.absent(),
           Value<String?> syncId = const Value.absent(),
+          bool? isDeleted,
+          Value<DateTime?> deletedAt = const Value.absent(),
+          Value<DateTime?> serverUpdatedAt = const Value.absent(),
           Value<String?> logoUrl = const Value.absent(),
           Value<String?> settings = const Value.absent()}) =>
       Churche(
@@ -2109,6 +2435,11 @@ class Churche extends DataClass implements Insertable<Churche> {
         lastModified:
             lastModified.present ? lastModified.value : this.lastModified,
         syncId: syncId.present ? syncId.value : this.syncId,
+        isDeleted: isDeleted ?? this.isDeleted,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        serverUpdatedAt: serverUpdatedAt.present
+            ? serverUpdatedAt.value
+            : this.serverUpdatedAt,
         logoUrl: logoUrl.present ? logoUrl.value : this.logoUrl,
         settings: settings.present ? settings.value : this.settings,
       );
@@ -2129,6 +2460,11 @@ class Churche extends DataClass implements Insertable<Churche> {
           ? data.lastModified.value
           : this.lastModified,
       syncId: data.syncId.present ? data.syncId.value : this.syncId,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      serverUpdatedAt: data.serverUpdatedAt.present
+          ? data.serverUpdatedAt.value
+          : this.serverUpdatedAt,
       logoUrl: data.logoUrl.present ? data.logoUrl.value : this.logoUrl,
       settings: data.settings.present ? data.settings.value : this.settings,
     );
@@ -2149,6 +2485,9 @@ class Churche extends DataClass implements Insertable<Churche> {
           ..write('createdAt: $createdAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('logoUrl: $logoUrl, ')
           ..write('settings: $settings')
           ..write(')'))
@@ -2169,6 +2508,9 @@ class Churche extends DataClass implements Insertable<Churche> {
       createdAt,
       lastModified,
       syncId,
+      isDeleted,
+      deletedAt,
+      serverUpdatedAt,
       logoUrl,
       settings);
   @override
@@ -2187,6 +2529,9 @@ class Churche extends DataClass implements Insertable<Churche> {
           other.createdAt == this.createdAt &&
           other.lastModified == this.lastModified &&
           other.syncId == this.syncId &&
+          other.isDeleted == this.isDeleted &&
+          other.deletedAt == this.deletedAt &&
+          other.serverUpdatedAt == this.serverUpdatedAt &&
           other.logoUrl == this.logoUrl &&
           other.settings == this.settings);
 }
@@ -2204,6 +2549,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
   final Value<DateTime> createdAt;
   final Value<DateTime?> lastModified;
   final Value<String?> syncId;
+  final Value<bool> isDeleted;
+  final Value<DateTime?> deletedAt;
+  final Value<DateTime?> serverUpdatedAt;
   final Value<String?> logoUrl;
   final Value<String?> settings;
   final Value<int> rowid;
@@ -2220,6 +2568,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
     this.createdAt = const Value.absent(),
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.logoUrl = const Value.absent(),
     this.settings = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2237,6 +2588,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
     required DateTime createdAt,
     this.lastModified = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.serverUpdatedAt = const Value.absent(),
     this.logoUrl = const Value.absent(),
     this.settings = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -2256,6 +2610,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
     Expression<DateTime>? createdAt,
     Expression<DateTime>? lastModified,
     Expression<String>? syncId,
+    Expression<bool>? isDeleted,
+    Expression<DateTime>? deletedAt,
+    Expression<DateTime>? serverUpdatedAt,
     Expression<String>? logoUrl,
     Expression<String>? settings,
     Expression<int>? rowid,
@@ -2273,6 +2630,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
       if (createdAt != null) 'created_at': createdAt,
       if (lastModified != null) 'last_modified': lastModified,
       if (syncId != null) 'sync_id': syncId,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (serverUpdatedAt != null) 'server_updated_at': serverUpdatedAt,
       if (logoUrl != null) 'logo_url': logoUrl,
       if (settings != null) 'settings': settings,
       if (rowid != null) 'rowid': rowid,
@@ -2292,6 +2652,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
       Value<DateTime>? createdAt,
       Value<DateTime?>? lastModified,
       Value<String?>? syncId,
+      Value<bool>? isDeleted,
+      Value<DateTime?>? deletedAt,
+      Value<DateTime?>? serverUpdatedAt,
       Value<String?>? logoUrl,
       Value<String?>? settings,
       Value<int>? rowid}) {
@@ -2308,6 +2671,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
       createdAt: createdAt ?? this.createdAt,
       lastModified: lastModified ?? this.lastModified,
       syncId: syncId ?? this.syncId,
+      isDeleted: isDeleted ?? this.isDeleted,
+      deletedAt: deletedAt ?? this.deletedAt,
+      serverUpdatedAt: serverUpdatedAt ?? this.serverUpdatedAt,
       logoUrl: logoUrl ?? this.logoUrl,
       settings: settings ?? this.settings,
       rowid: rowid ?? this.rowid,
@@ -2353,6 +2719,15 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
     if (syncId.present) {
       map['sync_id'] = Variable<String>(syncId.value);
     }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (serverUpdatedAt.present) {
+      map['server_updated_at'] = Variable<DateTime>(serverUpdatedAt.value);
+    }
     if (logoUrl.present) {
       map['logo_url'] = Variable<String>(logoUrl.value);
     }
@@ -2380,6 +2755,9 @@ class ChurchesCompanion extends UpdateCompanion<Churche> {
           ..write('createdAt: $createdAt, ')
           ..write('lastModified: $lastModified, ')
           ..write('syncId: $syncId, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('serverUpdatedAt: $serverUpdatedAt, ')
           ..write('logoUrl: $logoUrl, ')
           ..write('settings: $settings, ')
           ..write('rowid: $rowid')
@@ -2446,6 +2824,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   late final GeneratedColumn<String> syncId = GeneratedColumn<String>(
       'sync_id', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _lastSyncAtMeta =
+      const VerificationMeta('lastSyncAt');
+  @override
+  late final GeneratedColumn<DateTime> lastSyncAt = GeneratedColumn<DateTime>(
+      'last_sync_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -2456,7 +2840,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         createdAt,
         lastLogin,
         preferences,
-        syncId
+        syncId,
+        lastSyncAt
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2515,6 +2900,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       context.handle(_syncIdMeta,
           syncId.isAcceptableOrUnknown(data['sync_id']!, _syncIdMeta));
     }
+    if (data.containsKey('last_sync_at')) {
+      context.handle(
+          _lastSyncAtMeta,
+          lastSyncAt.isAcceptableOrUnknown(
+              data['last_sync_at']!, _lastSyncAtMeta));
+    }
     return context;
   }
 
@@ -2542,6 +2933,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}preferences']),
       syncId: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}sync_id']),
+      lastSyncAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}last_sync_at']),
     );
   }
 
@@ -2561,6 +2954,7 @@ class User extends DataClass implements Insertable<User> {
   final DateTime? lastLogin;
   final String? preferences;
   final String? syncId;
+  final DateTime? lastSyncAt;
   const User(
       {required this.id,
       required this.email,
@@ -2570,7 +2964,8 @@ class User extends DataClass implements Insertable<User> {
       required this.createdAt,
       this.lastLogin,
       this.preferences,
-      this.syncId});
+      this.syncId,
+      this.lastSyncAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -2590,6 +2985,9 @@ class User extends DataClass implements Insertable<User> {
     }
     if (!nullToAbsent || syncId != null) {
       map['sync_id'] = Variable<String>(syncId);
+    }
+    if (!nullToAbsent || lastSyncAt != null) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt);
     }
     return map;
   }
@@ -2612,6 +3010,9 @@ class User extends DataClass implements Insertable<User> {
           : Value(preferences),
       syncId:
           syncId == null && nullToAbsent ? const Value.absent() : Value(syncId),
+      lastSyncAt: lastSyncAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSyncAt),
     );
   }
 
@@ -2628,6 +3029,7 @@ class User extends DataClass implements Insertable<User> {
       lastLogin: serializer.fromJson<DateTime?>(json['lastLogin']),
       preferences: serializer.fromJson<String?>(json['preferences']),
       syncId: serializer.fromJson<String?>(json['syncId']),
+      lastSyncAt: serializer.fromJson<DateTime?>(json['lastSyncAt']),
     );
   }
   @override
@@ -2643,6 +3045,7 @@ class User extends DataClass implements Insertable<User> {
       'lastLogin': serializer.toJson<DateTime?>(lastLogin),
       'preferences': serializer.toJson<String?>(preferences),
       'syncId': serializer.toJson<String?>(syncId),
+      'lastSyncAt': serializer.toJson<DateTime?>(lastSyncAt),
     };
   }
 
@@ -2655,7 +3058,8 @@ class User extends DataClass implements Insertable<User> {
           DateTime? createdAt,
           Value<DateTime?> lastLogin = const Value.absent(),
           Value<String?> preferences = const Value.absent(),
-          Value<String?> syncId = const Value.absent()}) =>
+          Value<String?> syncId = const Value.absent(),
+          Value<DateTime?> lastSyncAt = const Value.absent()}) =>
       User(
         id: id ?? this.id,
         email: email ?? this.email,
@@ -2666,6 +3070,7 @@ class User extends DataClass implements Insertable<User> {
         lastLogin: lastLogin.present ? lastLogin.value : this.lastLogin,
         preferences: preferences.present ? preferences.value : this.preferences,
         syncId: syncId.present ? syncId.value : this.syncId,
+        lastSyncAt: lastSyncAt.present ? lastSyncAt.value : this.lastSyncAt,
       );
   User copyWithCompanion(UsersCompanion data) {
     return User(
@@ -2680,6 +3085,8 @@ class User extends DataClass implements Insertable<User> {
       preferences:
           data.preferences.present ? data.preferences.value : this.preferences,
       syncId: data.syncId.present ? data.syncId.value : this.syncId,
+      lastSyncAt:
+          data.lastSyncAt.present ? data.lastSyncAt.value : this.lastSyncAt,
     );
   }
 
@@ -2694,14 +3101,15 @@ class User extends DataClass implements Insertable<User> {
           ..write('createdAt: $createdAt, ')
           ..write('lastLogin: $lastLogin, ')
           ..write('preferences: $preferences, ')
-          ..write('syncId: $syncId')
+          ..write('syncId: $syncId, ')
+          ..write('lastSyncAt: $lastSyncAt')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode => Object.hash(id, email, displayName, photoUrl, churchIds,
-      createdAt, lastLogin, preferences, syncId);
+      createdAt, lastLogin, preferences, syncId, lastSyncAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2714,7 +3122,8 @@ class User extends DataClass implements Insertable<User> {
           other.createdAt == this.createdAt &&
           other.lastLogin == this.lastLogin &&
           other.preferences == this.preferences &&
-          other.syncId == this.syncId);
+          other.syncId == this.syncId &&
+          other.lastSyncAt == this.lastSyncAt);
 }
 
 class UsersCompanion extends UpdateCompanion<User> {
@@ -2727,6 +3136,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<DateTime?> lastLogin;
   final Value<String?> preferences;
   final Value<String?> syncId;
+  final Value<DateTime?> lastSyncAt;
   final Value<int> rowid;
   const UsersCompanion({
     this.id = const Value.absent(),
@@ -2738,6 +3148,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.lastLogin = const Value.absent(),
     this.preferences = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   UsersCompanion.insert({
@@ -2750,6 +3161,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.lastLogin = const Value.absent(),
     this.preferences = const Value.absent(),
     this.syncId = const Value.absent(),
+    this.lastSyncAt = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         email = Value(email),
@@ -2765,6 +3177,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<DateTime>? lastLogin,
     Expression<String>? preferences,
     Expression<String>? syncId,
+    Expression<DateTime>? lastSyncAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2777,6 +3190,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (lastLogin != null) 'last_login': lastLogin,
       if (preferences != null) 'preferences': preferences,
       if (syncId != null) 'sync_id': syncId,
+      if (lastSyncAt != null) 'last_sync_at': lastSyncAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2791,6 +3205,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<DateTime?>? lastLogin,
       Value<String?>? preferences,
       Value<String?>? syncId,
+      Value<DateTime?>? lastSyncAt,
       Value<int>? rowid}) {
     return UsersCompanion(
       id: id ?? this.id,
@@ -2802,6 +3217,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       lastLogin: lastLogin ?? this.lastLogin,
       preferences: preferences ?? this.preferences,
       syncId: syncId ?? this.syncId,
+      lastSyncAt: lastSyncAt ?? this.lastSyncAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2836,6 +3252,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (syncId.present) {
       map['sync_id'] = Variable<String>(syncId.value);
     }
+    if (lastSyncAt.present) {
+      map['last_sync_at'] = Variable<DateTime>(lastSyncAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2854,6 +3273,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('lastLogin: $lastLogin, ')
           ..write('preferences: $preferences, ')
           ..write('syncId: $syncId, ')
+          ..write('lastSyncAt: $lastSyncAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2899,6 +3319,9 @@ typedef $$PrayerRequestsTableCreateCompanionBuilder = PrayerRequestsCompanion
   Value<String?> reminderSettings,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<int> rowid,
 });
 typedef $$PrayerRequestsTableUpdateCompanionBuilder = PrayerRequestsCompanion
@@ -2925,6 +3348,9 @@ typedef $$PrayerRequestsTableUpdateCompanionBuilder = PrayerRequestsCompanion
   Value<String?> reminderSettings,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<int> rowid,
 });
 
@@ -3004,6 +3430,16 @@ class $$PrayerRequestsTableFilterComposer
 
   ColumnFilters<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 }
 
 class $$PrayerRequestsTableOrderingComposer
@@ -3087,6 +3523,16 @@ class $$PrayerRequestsTableOrderingComposer
 
   ColumnOrderings<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
 }
 
 class $$PrayerRequestsTableAnnotationComposer
@@ -3163,6 +3609,15 @@ class $$PrayerRequestsTableAnnotationComposer
 
   GeneratedColumn<String> get syncId =>
       $composableBuilder(column: $table.syncId, builder: (column) => column);
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt, builder: (column) => column);
 }
 
 class $$PrayerRequestsTableTableManager extends RootTableManager<
@@ -3214,6 +3669,9 @@ class $$PrayerRequestsTableTableManager extends RootTableManager<
             Value<String?> reminderSettings = const Value.absent(),
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PrayerRequestsCompanion(
@@ -3239,6 +3697,9 @@ class $$PrayerRequestsTableTableManager extends RootTableManager<
             reminderSettings: reminderSettings,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -3264,6 +3725,9 @@ class $$PrayerRequestsTableTableManager extends RootTableManager<
             Value<String?> reminderSettings = const Value.absent(),
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               PrayerRequestsCompanion.insert(
@@ -3289,6 +3753,9 @@ class $$PrayerRequestsTableTableManager extends RootTableManager<
             reminderSettings: reminderSettings,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
@@ -3326,6 +3793,9 @@ typedef $$PrayerListsTableCreateCompanionBuilder = PrayerListsCompanion
   required DateTime createdAt,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<int> requestCount,
   Value<String?> color,
   Value<String?> icon,
@@ -3344,6 +3814,9 @@ typedef $$PrayerListsTableUpdateCompanionBuilder = PrayerListsCompanion
   Value<DateTime> createdAt,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<int> requestCount,
   Value<String?> color,
   Value<String?> icon,
@@ -3391,6 +3864,16 @@ class $$PrayerListsTableFilterComposer
 
   ColumnFilters<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<int> get requestCount => $composableBuilder(
       column: $table.requestCount, builder: (column) => ColumnFilters(column));
@@ -3446,6 +3929,16 @@ class $$PrayerListsTableOrderingComposer
   ColumnOrderings<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<int> get requestCount => $composableBuilder(
       column: $table.requestCount,
       builder: (column) => ColumnOrderings(column));
@@ -3499,6 +3992,15 @@ class $$PrayerListsTableAnnotationComposer
   GeneratedColumn<String> get syncId =>
       $composableBuilder(column: $table.syncId, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt, builder: (column) => column);
+
   GeneratedColumn<int> get requestCount => $composableBuilder(
       column: $table.requestCount, builder: (column) => column);
 
@@ -3543,6 +4045,9 @@ class $$PrayerListsTableTableManager extends RootTableManager<
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<int> requestCount = const Value.absent(),
             Value<String?> color = const Value.absent(),
             Value<String?> icon = const Value.absent(),
@@ -3560,6 +4065,9 @@ class $$PrayerListsTableTableManager extends RootTableManager<
             createdAt: createdAt,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             requestCount: requestCount,
             color: color,
             icon: icon,
@@ -3577,6 +4085,9 @@ class $$PrayerListsTableTableManager extends RootTableManager<
             required DateTime createdAt,
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<int> requestCount = const Value.absent(),
             Value<String?> color = const Value.absent(),
             Value<String?> icon = const Value.absent(),
@@ -3594,6 +4105,9 @@ class $$PrayerListsTableTableManager extends RootTableManager<
             createdAt: createdAt,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             requestCount: requestCount,
             color: color,
             icon: icon,
@@ -3631,6 +4145,9 @@ typedef $$ChurchesTableCreateCompanionBuilder = ChurchesCompanion Function({
   required DateTime createdAt,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<String?> logoUrl,
   Value<String?> settings,
   Value<int> rowid,
@@ -3648,6 +4165,9 @@ typedef $$ChurchesTableUpdateCompanionBuilder = ChurchesCompanion Function({
   Value<DateTime> createdAt,
   Value<DateTime?> lastModified,
   Value<String?> syncId,
+  Value<bool> isDeleted,
+  Value<DateTime?> deletedAt,
+  Value<DateTime?> serverUpdatedAt,
   Value<String?> logoUrl,
   Value<String?> settings,
   Value<int> rowid,
@@ -3697,6 +4217,16 @@ class $$ChurchesTableFilterComposer
 
   ColumnFilters<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get logoUrl => $composableBuilder(
       column: $table.logoUrl, builder: (column) => ColumnFilters(column));
@@ -3751,6 +4281,16 @@ class $$ChurchesTableOrderingComposer
   ColumnOrderings<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+      column: $table.isDeleted, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt,
+      builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get logoUrl => $composableBuilder(
       column: $table.logoUrl, builder: (column) => ColumnOrderings(column));
 
@@ -3803,6 +4343,15 @@ class $$ChurchesTableAnnotationComposer
   GeneratedColumn<String> get syncId =>
       $composableBuilder(column: $table.syncId, builder: (column) => column);
 
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get serverUpdatedAt => $composableBuilder(
+      column: $table.serverUpdatedAt, builder: (column) => column);
+
   GeneratedColumn<String> get logoUrl =>
       $composableBuilder(column: $table.logoUrl, builder: (column) => column);
 
@@ -3845,6 +4394,9 @@ class $$ChurchesTableTableManager extends RootTableManager<
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<String?> logoUrl = const Value.absent(),
             Value<String?> settings = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -3862,6 +4414,9 @@ class $$ChurchesTableTableManager extends RootTableManager<
             createdAt: createdAt,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             logoUrl: logoUrl,
             settings: settings,
             rowid: rowid,
@@ -3879,6 +4434,9 @@ class $$ChurchesTableTableManager extends RootTableManager<
             required DateTime createdAt,
             Value<DateTime?> lastModified = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<bool> isDeleted = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<DateTime?> serverUpdatedAt = const Value.absent(),
             Value<String?> logoUrl = const Value.absent(),
             Value<String?> settings = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -3896,6 +4454,9 @@ class $$ChurchesTableTableManager extends RootTableManager<
             createdAt: createdAt,
             lastModified: lastModified,
             syncId: syncId,
+            isDeleted: isDeleted,
+            deletedAt: deletedAt,
+            serverUpdatedAt: serverUpdatedAt,
             logoUrl: logoUrl,
             settings: settings,
             rowid: rowid,
@@ -3929,6 +4490,7 @@ typedef $$UsersTableCreateCompanionBuilder = UsersCompanion Function({
   Value<DateTime?> lastLogin,
   Value<String?> preferences,
   Value<String?> syncId,
+  Value<DateTime?> lastSyncAt,
   Value<int> rowid,
 });
 typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
@@ -3941,6 +4503,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<DateTime?> lastLogin,
   Value<String?> preferences,
   Value<String?> syncId,
+  Value<DateTime?> lastSyncAt,
   Value<int> rowid,
 });
 
@@ -3978,6 +4541,9 @@ class $$UsersTableFilterComposer extends Composer<_$AppDatabase, $UsersTable> {
 
   ColumnFilters<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnFilters(column));
 }
 
 class $$UsersTableOrderingComposer
@@ -4015,6 +4581,9 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<String> get syncId => $composableBuilder(
       column: $table.syncId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => ColumnOrderings(column));
 }
 
 class $$UsersTableAnnotationComposer
@@ -4052,6 +4621,9 @@ class $$UsersTableAnnotationComposer
 
   GeneratedColumn<String> get syncId =>
       $composableBuilder(column: $table.syncId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get lastSyncAt => $composableBuilder(
+      column: $table.lastSyncAt, builder: (column) => column);
 }
 
 class $$UsersTableTableManager extends RootTableManager<
@@ -4086,6 +4658,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<DateTime?> lastLogin = const Value.absent(),
             Value<String?> preferences = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<DateTime?> lastSyncAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UsersCompanion(
@@ -4098,6 +4671,7 @@ class $$UsersTableTableManager extends RootTableManager<
             lastLogin: lastLogin,
             preferences: preferences,
             syncId: syncId,
+            lastSyncAt: lastSyncAt,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -4110,6 +4684,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<DateTime?> lastLogin = const Value.absent(),
             Value<String?> preferences = const Value.absent(),
             Value<String?> syncId = const Value.absent(),
+            Value<DateTime?> lastSyncAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               UsersCompanion.insert(
@@ -4122,6 +4697,7 @@ class $$UsersTableTableManager extends RootTableManager<
             lastLogin: lastLogin,
             preferences: preferences,
             syncId: syncId,
+            lastSyncAt: lastSyncAt,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

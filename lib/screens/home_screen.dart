@@ -8,6 +8,7 @@ import 'package:prayer_sync/screens/profile_screen.dart';
 import 'package:prayer_sync/widgets/prayer_request_card.dart';
 import 'package:prayer_sync/widgets/sync_debug_widget.dart';
 import 'package:prayer_sync/models/prayer_request.dart';
+import 'package:prayer_sync/services/sync_service.dart';
 import 'package:badges/badges.dart' as badges;
 
 class HomeScreen extends StatefulWidget {
@@ -87,6 +88,24 @@ class DashboardView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Welcome, ${authProvider.currentUser?.displayName ?? 'Guest'}'),
+        actions: [
+          StreamBuilder<SyncStatus>(
+            stream: SyncService.instance.syncStatus,
+            builder: (context, snapshot) {
+              final status = snapshot.data ?? SyncStatus.idle;
+              return IconButton(
+                icon: Icon(
+                  _getSyncIcon(status),
+                  color: _getSyncColor(status),
+                ),
+                onPressed: () {
+                  SyncService.instance.fullSync();
+                },
+                tooltip: 'Sync Status: ${status.toString().split('.').last}',
+              );
+            },
+          ),
+        ],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -194,6 +213,32 @@ class DashboardView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  IconData _getSyncIcon(SyncStatus status) {
+    switch (status) {
+      case SyncStatus.idle:
+        return Icons.cloud_off;
+      case SyncStatus.syncing:
+        return Icons.sync;
+      case SyncStatus.synced:
+        return Icons.cloud_done;
+      case SyncStatus.error:
+        return Icons.cloud_off;
+    }
+  }
+
+  Color _getSyncColor(SyncStatus status) {
+    switch (status) {
+      case SyncStatus.idle:
+        return Colors.grey;
+      case SyncStatus.syncing:
+        return Colors.blue;
+      case SyncStatus.synced:
+        return Colors.green;
+      case SyncStatus.error:
+        return Colors.red;
+    }
   }
 }
 

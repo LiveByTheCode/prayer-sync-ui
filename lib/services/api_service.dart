@@ -348,6 +348,15 @@ extension SyncApiService on ApiService {
     }
   }
 
+  Future<Response> downloadSync(DateTime lastSyncTime) async {
+    try {
+      final formattedTime = lastSyncTime.toIso8601String();
+      return await _dio.get('/sync/download?lastSyncTime=$formattedTime');
+    } on DioException catch (e) {
+      throw _handleDioError(e);
+    }
+  }
+
   Future<Response> bidirectionalSync(Map<String, dynamic> syncRequest) async {
     try {
       return await _dio.post('/sync/bidirectional', data: syncRequest);

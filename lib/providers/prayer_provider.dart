@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:prayer_sync/database/app_database.dart';
 import 'package:prayer_sync/database/database_repository.dart';
@@ -8,10 +9,12 @@ import 'package:uuid/uuid.dart';
 
 class PrayerProvider extends ChangeNotifier {
   late AppDatabase _database;
+  bool _isDatabaseInitialized = false;
   List<models.PrayerRequest> _requests = [];
   List<models.PrayerList> _lists = [];
   bool _isLoading = false;
   final _uuid = const Uuid();
+  StreamSubscription<void>? _syncSubscription;
 
   List<models.PrayerRequest> get requests => _requests;
   List<models.PrayerList> get lists => _lists;
@@ -19,19 +22,43 @@ class PrayerProvider extends ChangeNotifier {
 
   void setDatabase(AppDatabase db) {
     _database = db;
+    _isDatabaseInitialized = true;
     SyncService.instance.initialize(db);
     loadData();
+    
+    // Listen for sync data changes
+    _syncSubscription?.cancel();
+    _syncSubscription = SyncService.instance.dataChanged.listen((_) {
+      debugPrint('📱 PrayerProvider: Sync data changed, reloading...');
+      loadData();
+    });
+    
+    // Trigger initial sync now that database is ready
+    debugPrint('📱 PrayerProvider: Database initialized, triggering initial sync...');
+    // Add small delay to ensure token is properly saved
+    Future.delayed(const Duration(milliseconds: 500), () {
+      SyncService.instance.fullSync();
+    });
   }
 
   Future<void> loadData() async {
+    if (!_isDatabaseInitialized) {
+      debugPrint('⚠️ PrayerProvider: Database not initialized yet');
+      return;
+    }
+    
     _isLoading = true;
     notifyListeners();
 
     try {
       _requests = await _database.getAllPrayerRequests();
       _lists = await _database.getAllPrayerLists();
+      debugPrint('📱 PrayerProvider: Loaded ${_requests.length} requests and ${_lists.length} lists from database');
     } catch (e) {
-      debugPrint('Error loading data: $e');
+      debugPrint('❌ Error loading data: $e');
+      // Reset to empty lists on error to avoid null issues
+      _requests = [];
+      _lists = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -228,5 +255,11 @@ class PrayerProvider extends ChangeNotifier {
         r.requestDetail.toLowerCase().contains(lowercaseQuery) ||
         r.tags.any((tag) => tag.toLowerCase().contains(lowercaseQuery))
     ).toList();
+  }
+  
+  @override
+  void dispose() {
+    _syncSubscription?.cancel();
+    super.dispose();
   }
 }

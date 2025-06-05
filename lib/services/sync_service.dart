@@ -17,13 +17,15 @@ class SyncService {
   SyncService._internal();
 
   final ApiService _apiService = ApiService.instance;
-  late final AppDatabase _database;
+  AppDatabase? _database;
   
   DateTime? _lastSyncTime;
   bool _isSyncing = false;
   final _syncStatusController = StreamController<SyncStatus>.broadcast();
+  final _dataChangedController = StreamController<void>.broadcast();
   
   Stream<SyncStatus> get syncStatus => _syncStatusController.stream;
+  Stream<void> get dataChanged => _dataChangedController.stream;
 
   void initialize(AppDatabase database) {
     _database = database;
@@ -86,6 +88,12 @@ class SyncService {
       return;
     }
 
+    // Check if database is initialized
+    if (!_isDatabaseInitialized()) {
+      debugPrint('Database not initialized, skipping sync');
+      return;
+    }
+
     // Check if user is authenticated
     final token = await TokenStorageService.instance.getToken();
     final userId = await TokenStorageService.instance.getUserId();
@@ -131,31 +139,29 @@ class SyncService {
       return;
     }
 
-    // Convert to sync format
+    // Convert to sync format for new upload endpoint
     final syncRequest = {
-      'lastSyncTime': _lastSyncTime?.toIso8601String(),
-      'updatedPrayerRequests': localPrayerRequests.map((pr) => _prayerRequestToJson(pr)).toList(),
-      'updatedPrayerLists': localPrayerLists.map((pl) => _prayerListToJson(pl)).toList(),
-      'deletedPrayerRequestIds': <String>[],
-      'deletedPrayerListIds': <String>[],
+      'prayerRequests': localPrayerRequests.map((pr) => _prayerRequestToJson(pr)).toList(),
+      'prayerLists': localPrayerLists.map((pl) => _prayerListToJson(pl)).toList(),
     };
 
     debugPrint('📦 Sync request prepared: ${syncRequest.keys}');
-    debugPrint('🌐 Calling API endpoint...');
+    debugPrint('🌐 Calling API upload endpoint...');
 
     try {
-      // Call upload endpoint
+      // Call new upload endpoint
       final response = await _apiService.uploadSync(syncRequest);
       
       debugPrint('📡 API Response: ${response.statusCode}');
       
       if (response.statusCode == 200) {
         debugPrint('✅ Upload sync successful');
-        // Handle any conflicts returned
-        final conflicts = response.data['conflicts'] as List?;
-        if (conflicts != null && conflicts.isNotEmpty) {
-          debugPrint('⚠️ Sync conflicts detected: ${conflicts.length}');
-          // TODO: Handle conflicts
+        final responseData = response.data;
+        if (responseData['message'] != null) {
+          debugPrint('📝 Server message: ${responseData['message']}');
+        }
+        if (responseData['itemsProcessed'] != null) {
+          debugPrint('📊 Items processed: ${responseData['itemsProcessed']}');
         }
       } else {
         debugPrint('❌ Upload sync failed with status: ${response.statusCode}');
@@ -168,54 +174,120 @@ class SyncService {
   }
 
   Future<void> _performBidirectionalSync() async {
-    // Get local changes
-    final localPrayerRequests = await _getLocalPrayerRequests();
-    final localPrayerLists = await _getLocalPrayerLists();
-
-    final syncRequest = {
-      'lastSyncTime': _lastSyncTime?.toIso8601String(),
-      'updatedPrayerRequests': localPrayerRequests.map((pr) => _prayerRequestToJson(pr)).toList(),
-      'updatedPrayerLists': localPrayerLists.map((pl) => _prayerListToJson(pl)).toList(),
-      'deletedPrayerRequestIds': <String>[],
-      'deletedPrayerListIds': <String>[],
-    };
-
-    // Call bidirectional sync endpoint
-    final response = await _apiService.bidirectionalSync(syncRequest);
+    debugPrint('🔄 Starting bidirectional sync...');
     
-    if (response.statusCode == 200) {
-      debugPrint('Bidirectional sync successful');
+    // Step 1: Upload local changes
+    await _performUploadSync();
+    
+    // Step 2: Download server changes
+    await _performDownloadSync();
+    
+    debugPrint('✅ Bidirectional sync completed');
+  }
+  
+  Future<void> _performDownloadSync() async {
+    debugPrint('📥 Starting download sync...');
+    
+    // Use last sync time or a default time
+    final lastSyncTime = _lastSyncTime ?? DateTime.now().subtract(const Duration(days: 30));
+    
+    try {
+      // Call new download endpoint
+      final response = await _apiService.downloadSync(lastSyncTime);
       
-      // Process server changes
-      final serverPrayerRequests = response.data['updatedPrayerRequests'] as List?;
-      final serverPrayerLists = response.data['updatedPrayerLists'] as List?;
+      debugPrint('📡 Download API Response: ${response.statusCode}');
       
-      if (serverPrayerRequests != null) {
-        await _processServerPrayerRequests(serverPrayerRequests);
+      if (response.statusCode == 200) {
+        final responseData = response.data;
+        
+        // Process updated items
+        final updatedRequests = responseData['updatedRequests'] as List?;
+        final updatedLists = responseData['updatedLists'] as List?;
+        
+        if (updatedRequests != null && updatedRequests.isNotEmpty) {
+          debugPrint('📥 Processing ${updatedRequests.length} updated prayer requests from server');
+          await _processServerPrayerRequests(updatedRequests);
+        }
+        
+        if (updatedLists != null && updatedLists.isNotEmpty) {
+          debugPrint('📥 Processing ${updatedLists.length} updated prayer lists from server');
+          await _processServerPrayerLists(updatedLists);
+        }
+        
+        // Process deleted items
+        final deletedRequests = responseData['deletedRequests'] as List?;
+        final deletedLists = responseData['deletedLists'] as List?;
+        
+        if (deletedRequests != null && deletedRequests.isNotEmpty) {
+          debugPrint('🗑️ Processing ${deletedRequests.length} deleted prayer requests from server');
+          await _processDeletedPrayerRequests(deletedRequests);
+        }
+        
+        if (deletedLists != null && deletedLists.isNotEmpty) {
+          debugPrint('🗑️ Processing ${deletedLists.length} deleted prayer lists from server');
+          await _processDeletedPrayerLists(deletedLists);
+        }
+        
+        // Update last sync time
+        if (responseData['syncTime'] != null) {
+          _lastSyncTime = DateTime.parse(responseData['syncTime']);
+          debugPrint('📅 Updated last sync time to: $_lastSyncTime');
+        }
+        
+        debugPrint('✅ Download sync successful');
+        
+        // Notify listeners that data has changed
+        _dataChangedController.add(null);
+      } else {
+        debugPrint('❌ Download sync failed with status: ${response.statusCode}');
+        debugPrint('Response data: ${response.data}');
+        throw Exception('Download sync failed with status: ${response.statusCode}');
       }
-      
-      if (serverPrayerLists != null) {
-        await _processServerPrayerLists(serverPrayerLists);
-      }
-      
-      // Handle conflicts
-      final conflicts = response.data['conflicts'] as List?;
-      if (conflicts != null && conflicts.isNotEmpty) {
-        debugPrint('Sync conflicts detected: ${conflicts.length}');
-        // TODO: Handle conflicts
-      }
+    } catch (e) {
+      debugPrint('💥 Download sync failed: $e');
+      rethrow;
     }
   }
 
   Future<List<models.PrayerRequest>> _getLocalPrayerRequests() async {
-    // Get all local prayer requests that need syncing
-    // For now, get all requests - in production you'd track which ones changed
-    return await _database.getAllPrayerRequests();
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, returning empty requests list');
+      return [];
+    }
+    try {
+      // Get all local prayer requests that need syncing
+      // For now, get all requests - in production you'd track which ones changed
+      debugPrint('📊 SyncService: Getting local prayer requests from database...');
+      final requests = await _database!.getAllPrayerRequests();
+      debugPrint('📊 SyncService: Found ${requests.length} local prayer requests');
+      return requests;
+    } catch (e) {
+      debugPrint('❌ SyncService: Error getting local prayer requests: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      return [];
+    }
   }
 
   Future<List<models.PrayerList>> _getLocalPrayerLists() async {
-    // Get all local prayer lists that need syncing
-    return await _database.getAllPrayerLists();
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, returning empty lists');
+      return [];
+    }
+    try {
+      // Get all local prayer lists that need syncing
+      debugPrint('📊 SyncService: Getting local prayer lists from database...');
+      final lists = await _database!.getAllPrayerLists();
+      debugPrint('📊 SyncService: Found ${lists.length} local prayer lists');
+      return lists;
+    } catch (e) {
+      debugPrint('❌ SyncService: Error getting local prayer lists: $e');
+      debugPrint('❌ Stack trace: ${StackTrace.current}');
+      return [];
+    }
+  }
+  
+  bool _isDatabaseInitialized() {
+    return _database != null;
   }
 
   Map<String, dynamic> _prayerRequestToJson(models.PrayerRequest pr) {
@@ -253,71 +325,111 @@ class SyncService {
   }
 
   Future<void> _processServerPrayerRequests(List<dynamic> serverRequests) async {
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, skipping server prayer requests processing');
+      return;
+    }
     for (final serverRequest in serverRequests) {
       try {
         // Convert server format to local format and upsert
         final prayerRequest = _serverRequestToLocal(serverRequest);
-        await _database.insertPrayerRequest(prayerRequest);
-        debugPrint('Updated local prayer request: ${prayerRequest.id}');
+        await _database!.insertPrayerRequest(prayerRequest);
+        debugPrint('✅ Updated local prayer request: ${prayerRequest.id}');
       } catch (e) {
-        debugPrint('Error processing server prayer request: $e');
+        debugPrint('❌ Error processing server prayer request: $e');
+      }
+    }
+  }
+  
+  Future<void> _processDeletedPrayerRequests(List<dynamic> deletedRequests) async {
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, skipping deleted prayer requests processing');
+      return;
+    }
+    for (final deletedRequest in deletedRequests) {
+      try {
+        final requestId = deletedRequest['id'] as String;
+        await _database!.deletePrayerRequest(requestId);
+        debugPrint('🗑️ Deleted local prayer request: $requestId');
+      } catch (e) {
+        debugPrint('❌ Error deleting prayer request: $e');
       }
     }
   }
 
   Future<void> _processServerPrayerLists(List<dynamic> serverLists) async {
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, skipping server prayer lists processing');
+      return;
+    }
     for (final serverList in serverLists) {
       try {
         // Convert server format to local format and upsert
         final prayerList = _serverListToLocal(serverList);
-        await _database.insertPrayerList(prayerList);
-        debugPrint('Updated local prayer list: ${prayerList.id}');
+        await _database!.insertPrayerList(prayerList);
+        debugPrint('✅ Updated local prayer list: ${prayerList.id}');
       } catch (e) {
-        debugPrint('Error processing server prayer list: $e');
+        debugPrint('❌ Error processing server prayer list: $e');
+      }
+    }
+  }
+  
+  Future<void> _processDeletedPrayerLists(List<dynamic> deletedLists) async {
+    if (!_isDatabaseInitialized()) {
+      debugPrint('⚠️ SyncService: Database not initialized, skipping deleted prayer lists processing');
+      return;
+    }
+    for (final deletedList in deletedLists) {
+      try {
+        final listId = deletedList['id'] as String;
+        await _database!.deletePrayerList(listId);
+        debugPrint('🗑️ Deleted local prayer list: $listId');
+      } catch (e) {
+        debugPrint('❌ Error deleting prayer list: $e');
       }
     }
   }
 
   models.PrayerRequest _serverRequestToLocal(Map<String, dynamic> json) {
     return models.PrayerRequest(
-      id: json['id'],
-      listId: json['prayerListId'],
+      id: json['id']?.toString() ?? '',
+      listId: json['prayerListId']?.toString(),
       churchId: null, // Will be set based on list
-      dateAdded: DateTime.parse(json['createdAt']),
-      subject: json['title'],
-      requestDetail: json['description'] ?? '',
+      dateAdded: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
+      subject: json['title']?.toString() ?? '',
+      requestDetail: json['description']?.toString() ?? '',
       isAnswered: _parseStatus(json['status']) == models.RequestStatus.answered,
-      howAnswered: json['answeredDescription'],
+      howAnswered: json['answeredDescription']?.toString(),
       dateAnswered: json['answeredAt'] != null ? DateTime.parse(json['answeredAt']) : null,
-      category: _parseCategory(json['category']),
-      priority: _parsePriority(json['priority']),
+      category: _parseCategory(json['category']?.toString()),
+      priority: _parsePriority(json['priority']?.toString()),
       scriptureReference: null,
       notes: [],
-      requestorId: json['creatorId'],
-      requestorName: json['creatorName'] ?? 'Unknown',
-      privacyLevel: _parsePrivacyLevel(json['privacyLevel']),
+      requestorId: json['creatorId']?.toString() ?? '',
+      requestorName: json['creatorName']?.toString() ?? 'Unknown',
+      privacyLevel: _parsePrivacyLevel(json['privacyLevel']?.toString()),
       tags: [],
-      status: _parseStatus(json['status']),
+      status: _parseStatus(json['status']?.toString()),
       prayerCount: json['prayerCount'] ?? 0,
       reminderSettings: null,
       lastModified: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      syncId: json['id'], // Use server ID as sync ID
+      syncId: json['id']?.toString() ?? '', // Use server ID as sync ID
     );
   }
 
   models.PrayerList _serverListToLocal(Map<String, dynamic> json) {
     return models.PrayerList(
-      id: json['id'],
-      churchId: json['churchId'],
-      name: json['name'],
-      description: json['description'],
-      ownerId: json['creatorId'],
-      ownerName: json['creatorName'] ?? 'Unknown',
+      id: json['id']?.toString() ?? '',
+      churchId: json['churchId']?.toString(),
+      name: json['name']?.toString() ?? '',
+      description: json['description']?.toString(),
+      ownerId: json['creatorId']?.toString() ?? '',
+      ownerName: json['creatorName']?.toString() ?? 'Unknown',
       memberIds: [],
-      privacyLevel: _parsePrivacyLevel(json['privacyLevel']),
-      createdAt: DateTime.parse(json['createdAt']),
+      privacyLevel: _parsePrivacyLevel(json['privacyLevel']?.toString()),
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
       lastModified: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
-      syncId: json['id'], // Use server ID as sync ID
+      syncId: json['id']?.toString() ?? '', // Use server ID as sync ID
       requestCount: json['requestCount'] ?? 0,
     );
   }
@@ -367,6 +479,7 @@ class SyncService {
 
   void dispose() {
     _syncStatusController.close();
+    _dataChangedController.close();
   }
 }
 

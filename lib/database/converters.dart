@@ -31,42 +31,48 @@ extension PrayerRequestDBExtension on PrayerRequest {
       }
     }
     
-    return models.PrayerRequest(
-      id: id,
-      listId: listId,
-      churchId: churchId,
-      dateAdded: dateAdded,
-      subject: subject,
-      requestDetail: requestDetail,
-      isAnswered: isAnswered,
-      howAnswered: howAnswered,
-      dateAnswered: dateAnswered,
-      category: models.RequestCategory.values.firstWhere(
-        (e) => e.name == category,
-        orElse: () => models.RequestCategory.other,
-      ),
-      priority: models.RequestPriority.values.firstWhere(
-        (e) => e.name == priority,
-        orElse: () => models.RequestPriority.medium,
-      ),
-      scriptureReference: scriptureReference,
-      notes: notesList,
-      requestorId: requestorId,
-      requestorName: requestorName,
-      privacyLevel: models.PrivacyLevel.values.firstWhere(
-        (e) => e.name == privacyLevel,
-        orElse: () => models.PrivacyLevel.private,
-      ),
-      tags: tagsList,
-      status: models.RequestStatus.values.firstWhere(
-        (e) => e.name == status,
-        orElse: () => models.RequestStatus.active,
-      ),
-      prayerCount: prayerCount,
-      reminderSettings: reminderSettings,
-      lastModified: lastModified,
-      syncId: syncId,
-    );
+    try {
+      return models.PrayerRequest(
+        id: id,
+        listId: listId,
+        churchId: churchId,
+        dateAdded: dateAdded,
+        subject: subject,
+        requestDetail: requestDetail,
+        isAnswered: isAnswered,
+        howAnswered: howAnswered,
+        dateAnswered: dateAnswered,
+        category: models.RequestCategory.values.firstWhere(
+          (e) => e.name == category,
+          orElse: () => models.RequestCategory.other,
+        ),
+        priority: models.RequestPriority.values.firstWhere(
+          (e) => e.name == priority,
+          orElse: () => models.RequestPriority.medium,
+        ),
+        scriptureReference: scriptureReference,
+        notes: notesList,
+        requestorId: requestorId,
+        requestorName: requestorName,
+        privacyLevel: models.PrivacyLevel.values.firstWhere(
+          (e) => e.name == privacyLevel,
+          orElse: () => models.PrivacyLevel.private,
+        ),
+        tags: tagsList,
+        status: models.RequestStatus.values.firstWhere(
+          (e) => e.name == status,
+          orElse: () => models.RequestStatus.active,
+        ),
+        prayerCount: prayerCount,
+        reminderSettings: reminderSettings,
+        lastModified: lastModified,
+        syncId: syncId,
+      );
+    } catch (e) {
+      print('❌ Error converting PrayerRequest from DB: $e');
+      print('❌ Prayer Request fields: id=$id, subject=$subject, requestorId=$requestorId, requestorName=$requestorName');
+      rethrow;
+    }
   }
 }
 

@@ -25,7 +25,7 @@ extension DatabaseRepository on AppDatabase {
   }
 
   Future<int> insertPrayerRequest(models.PrayerRequest request) {
-    return into(prayerRequests).insert(request.toCompanion());
+    return into(prayerRequests).insertOnConflictUpdate(request.toCompanion());
   }
 
   Future<bool> updatePrayerRequest(models.PrayerRequest request) {
@@ -50,7 +50,7 @@ extension DatabaseRepository on AppDatabase {
   }
 
   Future<int> insertPrayerList(models.PrayerList list) {
-    return into(prayerLists).insert(list.toCompanion());
+    return into(prayerLists).insertOnConflictUpdate(list.toCompanion());
   }
 
   Future<bool> updatePrayerList(models.PrayerList list) {
